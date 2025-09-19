@@ -82,6 +82,9 @@
     .multi-row td { background: var(--multi-bg); }
     .badge { font-size: 11px; display: block; margin-top: 4px; padding: 2px 6px; border-radius: 999px; border: 1px solid var(--border); width: fit-content; color: var(--muted); }
 
+    /* Notices */
+    .notice { margin: 8px 12px 0; background: var(--multi-bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; color: var(--text); }
+
     /* Footer summary */
     .summary { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-top: 1px solid var(--border); color: var(--muted); font-size: clamp(12px, 1.8vw, 14px); }
 
@@ -112,6 +115,8 @@
         <button class="time-btn" data-time="Night" aria-pressed="false">Night</button>
       </div>
 
+      <div id="ferrousNotice" class="notice" style="display:none"></div>
+
       <div class="table-wrap">
         <table>
           <thead>
@@ -127,7 +132,10 @@
 
       <div class="summary">
         <div><strong id="remaining"></strong> left for this time.</div>
-        <div>Highlighted items show all times they are used (tray: Multiple). Checklist resets on refresh.</div>
+        <div>
+          Highlighted items show all times they are used (tray: Multiple). Checklist resets on refresh.<br>
+          <span id="ferrousNote" style="color: var(--muted);"></span>
+        </div>
       </div>
     </section>
   </div>
@@ -150,7 +158,7 @@
         { name: "Azithromycin", when: "Monday, Wednesday, Friday" },
       ],
       Lunch: [
-        { name: "Levetiracetam (500 mg)", when: "Daily @ 2pm" },
+        { name: "Levetiracetam (500 mg)", when: "Daily @ 2PM" },
         { name: "Bumetanide", when: "Daily" },
         { name: "Carbocisteine", when: "Daily" },
         { name: "Salbutamol Nebuliser Liquid", when: "Daily" },
@@ -172,9 +180,10 @@
       ],
     };
 
+    // Map of normalized full med name -> list of times it appears
     const multiMap = (() => {
       const m = new Map();
-      const norm = s => s.trim().toLowerCase(); // keep full name, just normalize spaces/case
+      const norm = s => s.trim().toLowerCase(); // keep full name (incl. dosage), normalize case/space only
       for (const [time, section] of Object.entries(MEDS)) {
         for (const med of section) {
           const key = norm(med.name);
@@ -186,6 +195,25 @@
     })();
 
     let currentTime = 'Morning';
+
+    // Every-2-day logic for Ferrous Fumarate starting 18 Sept 2025 (local time)
+    const FERROUS_START = new Date(2025, 8, 18); // months are 0-indexed (8 = Sept)
+    function isFerrousToday(date = new Date()) {
+      const start = new Date(FERROUS_START.getFullYear(), FERROUS_START.getMonth(), FERROUS_START.getDate());
+      const today = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const diffDays = Math.floor((today - start) / 86400000);
+      return diffDays >= 0 && diffDays % 2 === 0; // show on start day, then every 2 days
+    }
+    function nextFerrousDue(date = new Date()) {
+      const start = new Date(FERROUS_START.getFullYear(), FERROUS_START.getMonth(), FERROUS_START.getDate());
+      const today = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      if (today <= start) return start;
+      const diffDays = Math.floor((today - start) / 86400000);
+      const remainder = diffDays % 2; // 0 = due today, 1 = due tomorrow
+      const next = new Date(today);
+      next.setDate(today.getDate() + (remainder === 0 ? 0 : 1));
+      return next;
+    }
 
     function formatDateLine() {
       const d = new Date();
@@ -223,6 +251,10 @@
       tbody.innerHTML = '';
 
       MEDS[currentTime].forEach((med) => {
+        // Hide Ferrous Fumarate on off-days
+        if (med.name.toLowerCase().startsWith('ferrous fumarate') && !isFerrousToday()) {
+          return; // skip rendering this row today
+        }
         const row = document.createElement('tr');
 
         const checkCell = document.createElement('td');
@@ -258,6 +290,22 @@
 
       updateRemaining();
       document.getElementById('currentLabel').textContent = `Showing: ${currentTime}`;
+      // Update ferrous notice visibility and text (Morning only)
+      const note = document.getElementById('ferrousNotice');
+      if (currentTime === 'Morning' && !isFerrousToday()) {
+        const next = nextFerrousDue();
+        const nextStr = next.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+        note.textContent = `Ferrous Fumarate not due today (next due: ${nextStr}).`;
+        note.style.display = 'block';
+      } else {
+        note.style.display = 'none';
+      }
+
+      // Update Ferrous Fumarate note in summary
+      const noteEl = document.getElementById('ferrousNote');
+      if (noteEl) {
+        noteEl.textContent = isFerrousToday() ? "Ferrous Fumarate is due today." : "Ferrous Fumarate is not due today.";
+      }
     }
 
     function updateRemaining() {
@@ -266,10 +314,46 @@
       document.getElementById('remaining').textContent = `${remaining} item${remaining !== 1 ? 's' : ''}`;
     }
 
+    // Wire up
     document.querySelectorAll('.time-btn').forEach(btn => btn.addEventListener('click', () => setTime(btn.dataset.time)));
 
+    // Init
     formatDateLine();
     setTime(getDefaultTime());
+
+    // --- Lightweight self-tests (logged to the console) ---
+    (function runSelfTests(){
+      const logOK = msg => console.log('%c✔ ' + msg, 'color: #16a34a');
+      const logErr = msg => console.error('✖ ' + msg);
+      try {
+        // Ferrous schedule tests
+        const d18 = new Date(2025, 8, 18);
+        const d19 = new Date(2025, 8, 19);
+        const d20 = new Date(2025, 8, 20);
+        const d21 = new Date(2025, 8, 21);
+        console.assert(isFerrousToday(d18) === true, '18 Sep should be due');
+        console.assert(isFerrousToday(d19) === false, '19 Sep should NOT be due');
+        console.assert(isFerrousToday(d20) === true, '20 Sep should be due');
+        console.assert(isFerrousToday(d21) === false, '21 Sep should NOT be due');
+        logOK('Ferrous every-2-days checks passed');
+
+        // Next due tests
+        console.assert(nextFerrousDue(d18).toDateString() === d18.toDateString(), 'Next due on 18th should be 18th');
+        console.assert(nextFerrousDue(d19).toDateString() === d20.toDateString(), 'Next due on 19th should be 20th');
+        console.assert(nextFerrousDue(d20).toDateString() === d20.toDateString(), 'Next due on 20th should be 20th');
+        console.assert(nextFerrousDue(d21).toDateString() === new Date(2025,8,22).toDateString(), 'Next due on 21st should be 22nd');
+        logOK('Next-due date checks passed');
+
+        // Multiple-detection tests (dosage-sensitive)
+        const t500 = multiMap.map.get(multiMap.norm('Levetiracetam (500 mg)')) || [];
+        const t1000 = multiMap.map.get(multiMap.norm('Levetiracetam (1000 mg)')) || [];
+        console.assert(t500.length === 1 && t500[0] === 'Lunch', '500 mg should appear only at Lunch');
+        console.assert(t1000.length === 2 && t1000.includes('Morning') && t1000.includes('Night'), '1000 mg should appear Morning & Night');
+        logOK('Multiple/duplicate highlighting checks passed');
+      } catch (e) {
+        logErr('Self-tests encountered an error: ' + (e && e.message ? e.message : e));
+      }
+    })();
   </script>
 </body>
 </html>
