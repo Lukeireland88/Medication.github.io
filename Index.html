@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Medication Tracker</title>
+  <style>
+    :root {
+      --bg: #f7f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --accent-weak: #dbeafe;
+      --border: #e5e7eb;
+      --multi-bg: #fff7cc; /* soft yellow for multi-use meds */
+    }
+
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      color: var(--text); background: var(--bg); display: grid; place-items: start center;
+    }
+
+    .container { width: min(900px, 96vw); padding: 24px; }
+
+    header { display: grid; gap: 8px; margin-bottom: 16px; }
+    h1 { margin: 0; font-size: clamp(22px, 3.8vw, 30px); }
+    .sub { color: var(--muted); font-size: clamp(13px, 1.5vw, 14px); }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 6px 18px rgba(0,0,0,0.06); }
+
+    /* Time picker buttons */
+    .time-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 12px; border-bottom: 1px solid var(--border); }
+    .time-btn {
+      appearance: none; border: 1px solid var(--border); background: var(--card); color: var(--text);
+      padding: 10px 12px; border-radius: 12px; font-weight: 600; cursor: pointer; text-align: center;
+    }
+    .time-btn[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-weak); color: var(--accent); }
+    .time-btn:focus { outline: 3px solid var(--accent-weak); outline-offset: 2px; }
+
+    /* Actions */
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: space-between; align-items: center; padding: 12px; }
+    .left-actions { display: flex; gap: 8px; align-items: center; }
+    .btn {
+      appearance: none; border: 1px solid var(--border); background: var(--card); color: var(--text);
+      padding: 10px 14px; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn:hover { background: #fafafa; }
+    .btn-primary { border-color: var(--accent); background: var(--accent); color: white; }
+    .btn-primary:hover { filter: brightness(0.98); }
+
+    /* Table */
+    .table-wrap { padding: 0 12px 12px; }
+    table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 12px; }
+    thead th { text-align: left; font-size: clamp(13px, 1.6vw, 14px); color: var(--muted); background: #f9fafb; border-bottom: 1px solid var(--border); padding: 12px; }
+    tbody td { padding: 14px; border-bottom: 1px solid var(--border); vertical-align: middle; font-size: clamp(14px, 2.2vw, 16px); word-break: break-word; }
+    tr:last-child td { border-bottom: none; }
+    .taken td { color: #6b7280; text-decoration: line-through; }
+    .pill { font-weight: 600; }
+    .multi-row td { background: var(--multi-bg); }
+    .badge { font-size: 11px; padding: 2px 6px; border-radius: 999px; border: 1px solid var(--border); margin-left: 8px; }
+
+    /* Footer summary */
+    .summary { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-top: 1px solid var(--border); color: var(--muted); font-size: clamp(12px, 1.8vw, 14px); }
+
+    /* Mobile touch targets */
+    input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--accent); }
+
+    @media (max-width: 700px) {
+      .container { padding: 16px; }
+      .time-tabs { grid-template-columns: repeat(2, 1fr); }
+      .actions { flex-direction: column; align-items: stretch; gap: 10px; }
+      .right-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      .btn { justify-content: center; }
+    }
+
+    @media (max-width: 480px) {
+      .time-tabs { grid-template-columns: 1fr; }
+      input[type="checkbox"] { width: 28px; height: 28px; }
+      .right-actions { grid-template-columns: 1fr; }
+    }
+
+    /* Print tweaks */
+    @media print {
+      body { background: white; }
+      .card { box-shadow: none; }
+      .actions, .time-tabs { display: none !important; }
+      .summary { border: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Medication Tracker</h1>
+      <div id="dateLine" class="sub"></div>
+    </header>
+
+    <section class="card" aria-labelledby="timeHeading">
+      <div class="time-tabs" role="tablist" aria-label="Times of day">
+        <button class="time-btn" role="tab" id="tab-morning" data-time="Morning" aria-pressed="true">Morning</button>
+        <button class="time-btn" role="tab" id="tab-lunch" data-time="Lunch" aria-pressed="false">Lunch</button>
+        <button class="time-btn" role="tab" id="tab-evening" data-time="Evening" aria-pressed="false">Evening</button>
+        <button class="time-btn" role="tab" id="tab-night" data-time="Night" aria-pressed="false">Night</button>
+      </div>
+
+      <div class="actions">
+        <div class="left-actions">
+          <span id="currentLabel" class="sub" aria-live="polite"></span>
+        </div>
+        <div class="right-actions">
+          <button class="btn" id="resetBtn" title="Clear all ticks for this section">Reset ticks</button>
+          <button class="btn" id="expandAllBtn" title="Show all times on one page">Show all</button>
+          <button class="btn btn-primary" id="printBtn" title="Print this page">Print</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table aria-describedby="currentLabel">
+          <thead>
+            <tr>
+              <th scope="col">Taken</th>
+              <th scope="col">Medication</th>
+              <th scope="col">When</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="summary">
+        <div><strong id="remaining"></strong> left for this time.</div>
+        <div>Highlighted items show all times they are used (tray: Multiple). Checklist resets on refresh.</div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // --- Data (no persistence) ---
+    const MEDS = {
+      Morning: [
+        { name: "Indapamide", when: "Daily" },
+        { name: "Isosorbide", when: "Daily" },
+        { name: "Lansoprazole", when: "Daily" },
+        { name: "Rivaroxaban", when: "Daily" },
+        { name: "Bumetanide", when: "Daily" },
+        { name: "Carbocisteine", when: "Daily" },
+        { name: "Diltiazem", when: "Daily" },
+        { name: "Levetiracetam (1000 mg)", when: "Daily" },
+        { name: "Phenoxymethylpenicillin", when: "Daily" },
+        { name: "Salbutamol Nebuliser Liquid", when: "Daily" },
+        { name: "Trimbow inhaler (Red)", when: "Daily" },
+        { name: "Ferrous Fumarate", when: "Every 2 days" },
+        { name: "Azithromycin", when: "Monday, Wednesday, Friday" },
+      ],
+      Lunch: [
+        { name: "Levetiracetam (500 mg)", when: "Daily" },
+        { name: "Bumetanide", when: "Daily" },
+        { name: "Carbocisteine", when: "Daily" },
+        { name: "Salbutamol Nebuliser Liquid", when: "Daily" },
+      ],
+      Evening: [
+        { name: "Salbutamol Nebuliser Liquid", when: "Daily" },
+      ],
+      Night: [
+        { name: "Folic Acid", when: "Daily" },
+        { name: "Atorvastatin", when: "Daily" },
+        { name: "Sodium Picosulfate", when: "Daily" },
+        { name: "Clopidogrel", when: "Daily" },
+        { name: "Carbocisteine", when: "Daily" },
+        { name: "Diltiazem", when: "Daily" },
+        { name: "Levetiracetam (1000 mg)", when: "Daily" },
+        { name: "Phenoxymethylpenicillin", when: "Daily" },
+        { name: "Salbutamol Nebuliser Liquid", when: "Daily" },
+        { name: "Trimbow inhaler (Red)", when: "Daily" },
+      ],
+    };
+
+    // Build a map of normalized med name -> list of times it appears
+    const multiMap = (() => {
+      const m = new Map();
+      const norm = s => s.replace(/\(.*?\)/g, '').trim().toLowerCase();
+      for (const [time, section] of Object.entries(MEDS)) {
+        for (const med of section) {
+          const key = norm(med.name);
+          if (!m.has(key)) m.set(key, []);
+          if (!m.get(key).includes(time)) m.get(key).push(time);
+        }
+      }
+      return { map: m, norm };
+    })();
+
+    // --- State ---
+    let currentTime = 'Morning';
+    let showAll = false;
+
+    function formatDateLine() {
+      const d = new Date();
+      const weekday = d.toLocaleDateString(undefined, { weekday: 'long' });
+      const date = d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+      document.getElementById('dateLine').textContent = `${weekday} · ${date}`;
+    }
+
+    function setTime(time) {
+      currentTime = time;
+      showAll = false;
+      document.querySelectorAll('.time-btn').forEach(btn => btn.setAttribute('aria-pressed', String(btn.dataset.time === time)));
+      document.getElementById('expandAllBtn').textContent = 'Show all';
+      render();
+    }
+
+    function toggleAll() {
+      showAll = !showAll;
+      document.getElementById('expandAllBtn').textContent = showAll ? 'Show one' : 'Show all';
+      render();
+    }
+
+    function render() {
+      const tbody = document.getElementById('tbody');
+      tbody.innerHTML = '';
+
+      const sections = showAll ? Object.keys(MEDS) : [currentTime];
+
+      sections.forEach((section) => {
+        if (showAll) {
+          const sepRow = document.createElement('tr');
+          const cell = document.createElement('td');
+          cell.colSpan = 3;
+          cell.style.background = '#f9fafb';
+          cell.style.fontWeight = '700';
+          cell.style.paddingTop = '16px';
+          cell.textContent = section;
+          sepRow.appendChild(cell);
+          tbody.appendChild(sepRow);
+        }
+
+        MEDS[section].forEach((med) => {
+          const row = document.createElement('tr');
+
+          const checkCell = document.createElement('td');
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.addEventListener('change', () => {
+            row.classList.toggle('taken', cb.checked);
+            updateRemaining();
+          });
+          checkCell.appendChild(cb);
+
+          const nameCell = document.createElement('td');
+          nameCell.className = 'pill';
+          nameCell.textContent = med.name;
+
+          const whenCell = document.createElement('td');
+          whenCell.textContent = med.when;
+
+          // Highlight if used multiple times across the day
+          const times = multiMap.map.get(multiMap.norm(med.name)) || [];
+          if (times.length > 1) {
+            row.classList.add('multi-row');
+            const badge = document.createElement('span');
+            badge.className = 'badge';
+            badge.textContent = 'Multiple: ' + times.join(', ');
+            nameCell.appendChild(badge);
+          }
+
+          row.appendChild(checkCell);
+          row.appendChild(nameCell);
+          row.appendChild(whenCell);
+          tbody.appendChild(row);
+        });
+      });
+
+      updateRemaining();
+
+      const currentLabel = showAll ? 'All times' : `${currentTime}`;
+      document.getElementById('currentLabel').textContent = `Showing: ${currentLabel}`;
+    }
+
+    function updateRemaining() {
+      const checkboxes = Array.from(document.querySelectorAll('tbody input[type="checkbox"]'));
+      const remaining = checkboxes.filter(cb => !cb.checked).length;
+      document.getElementById('remaining').textContent = `${remaining} item${remaining !== 1 ? 's' : ''}`;
+    }
+
+    function resetTicks() {
+      document.querySelectorAll('tbody input[type="checkbox"]').forEach(cb => { cb.checked = false; cb.dispatchEvent(new Event('change')); });
+    }
+
+    // --- Wire up UI ---
+    document.querySelectorAll('.time-btn').forEach(btn => btn.addEventListener('click', () => setTime(btn.dataset.time)));
+    document.getElementById('resetBtn').addEventListener('click', resetTicks);
+    document.getElementById('printBtn').addEventListener('click', () => window.print());
+    document.getElementById('expandAllBtn').addEventListener('click', toggleAll);
+
+    // Init
+    formatDateLine();
+    setTime('Morning');
+  </script>
+</body>
+</html>
