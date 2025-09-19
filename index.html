@@ -13,12 +13,12 @@
       --accent: #2563eb;
       --accent-weak: #dbeafe;
       --border: #e5e7eb;
-      --multi-bg: #fff7cc; /* soft yellow for multi-use meds */
+      --multi-bg: #fff7cc;
     }
 
     html, body { height: 100%; }
     body {
-      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
       color: var(--text); background: var(--bg); display: grid; place-items: start center;
     }
 
@@ -30,25 +30,14 @@
 
     .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 6px 18px rgba(0,0,0,0.06); }
 
-    /* Time picker buttons */
-    .time-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 12px; border-bottom: 1px solid var(--border); }
+    /* Collapsible time picker */
+    .time-toggle { padding: 12px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: 600; }
+    .time-options { display: none; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 12px; border-bottom: 1px solid var(--border); }
     .time-btn {
       appearance: none; border: 1px solid var(--border); background: var(--card); color: var(--text);
       padding: 10px 12px; border-radius: 12px; font-weight: 600; cursor: pointer; text-align: center;
     }
     .time-btn[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-weak); color: var(--accent); }
-    .time-btn:focus { outline: 3px solid var(--accent-weak); outline-offset: 2px; }
-
-    /* Actions */
-    .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: space-between; align-items: center; padding: 12px; }
-    .left-actions { display: flex; gap: 8px; align-items: center; }
-    .btn {
-      appearance: none; border: 1px solid var(--border); background: var(--card); color: var(--text);
-      padding: 10px 14px; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
-    }
-    .btn:hover { background: #fafafa; }
-    .btn-primary { border-color: var(--accent); background: var(--accent); color: white; }
-    .btn-primary:hover { filter: brightness(0.98); }
 
     /* Table */
     .table-wrap { padding: 0 12px 12px; }
@@ -64,29 +53,11 @@
     /* Footer summary */
     .summary { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-top: 1px solid var(--border); color: var(--muted); font-size: clamp(12px, 1.8vw, 14px); }
 
-    /* Mobile touch targets */
     input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--accent); }
 
-    @media (max-width: 700px) {
-      .container { padding: 16px; }
-      .time-tabs { grid-template-columns: repeat(2, 1fr); }
-      .actions { flex-direction: column; align-items: stretch; gap: 10px; }
-      .right-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-      .btn { justify-content: center; }
-    }
-
     @media (max-width: 480px) {
-      .time-tabs { grid-template-columns: 1fr; }
+      .time-options { grid-template-columns: 1fr; }
       input[type="checkbox"] { width: 28px; height: 28px; }
-      .right-actions { grid-template-columns: 1fr; }
-    }
-
-    /* Print tweaks */
-    @media print {
-      body { background: white; }
-      .card { box-shadow: none; }
-      .actions, .time-tabs { display: none !important; }
-      .summary { border: none; }
     }
   </style>
 </head>
@@ -97,27 +68,20 @@
       <div id="dateLine" class="sub"></div>
     </header>
 
-    <section class="card" aria-labelledby="timeHeading">
-      <div class="time-tabs" role="tablist" aria-label="Times of day">
-        <button class="time-btn" role="tab" id="tab-morning" data-time="Morning" aria-pressed="true">Morning</button>
-        <button class="time-btn" role="tab" id="tab-lunch" data-time="Lunch" aria-pressed="false">Lunch</button>
-        <button class="time-btn" role="tab" id="tab-evening" data-time="Evening" aria-pressed="false">Evening</button>
-        <button class="time-btn" role="tab" id="tab-night" data-time="Night" aria-pressed="false">Night</button>
+    <section class="card">
+      <div class="time-toggle" onclick="toggleOptions()">
+        <span id="currentLabel">Showing: Morning</span>
+        <span id="toggleArrow">▼</span>
       </div>
-
-      <div class="actions">
-        <div class="left-actions">
-          <span id="currentLabel" class="sub" aria-live="polite"></span>
-        </div>
-        <div class="right-actions">
-          <button class="btn" id="resetBtn" title="Clear all ticks for this section">Reset ticks</button>
-          <button class="btn" id="expandAllBtn" title="Show all times on one page">Show all</button>
-          <button class="btn btn-primary" id="printBtn" title="Print this page">Print</button>
-        </div>
+      <div class="time-options" id="timeOptions">
+        <button class="time-btn" data-time="Morning" aria-pressed="true">Morning</button>
+        <button class="time-btn" data-time="Lunch" aria-pressed="false">Lunch</button>
+        <button class="time-btn" data-time="Evening" aria-pressed="false">Evening</button>
+        <button class="time-btn" data-time="Night" aria-pressed="false">Night</button>
       </div>
 
       <div class="table-wrap">
-        <table aria-describedby="currentLabel">
+        <table>
           <thead>
             <tr>
               <th scope="col">Taken</th>
@@ -137,7 +101,6 @@
   </div>
 
   <script>
-    // --- Data (no persistence) ---
     const MEDS = {
       Morning: [
         { name: "Indapamide", when: "Daily" },
@@ -177,7 +140,6 @@
       ],
     };
 
-    // Build a map of normalized med name -> list of times it appears
     const multiMap = (() => {
       const m = new Map();
       const norm = s => s.replace(/\(.*?\)/g, '').trim().toLowerCase();
@@ -191,9 +153,7 @@
       return { map: m, norm };
     })();
 
-    // --- State ---
     let currentTime = 'Morning';
-    let showAll = false;
 
     function formatDateLine() {
       const d = new Date();
@@ -202,79 +162,70 @@
       document.getElementById('dateLine').textContent = `${weekday} · ${date}`;
     }
 
+    function toggleOptions() {
+      const options = document.getElementById('timeOptions');
+      const arrow = document.getElementById('toggleArrow');
+      const isOpen = options.style.display === 'grid';
+      options.style.display = isOpen ? 'none' : 'grid';
+      arrow.textContent = isOpen ? '▼' : '▲';
+    }
+
     function setTime(time) {
       currentTime = time;
-      showAll = false;
       document.querySelectorAll('.time-btn').forEach(btn => btn.setAttribute('aria-pressed', String(btn.dataset.time === time)));
-      document.getElementById('expandAllBtn').textContent = 'Show all';
+      document.getElementById('timeOptions').style.display = 'none';
+      document.getElementById('toggleArrow').textContent = '▼';
       render();
     }
 
-    function toggleAll() {
-      showAll = !showAll;
-      document.getElementById('expandAllBtn').textContent = showAll ? 'Show one' : 'Show all';
-      render();
+    function getDefaultTime() {
+      const hour = new Date().getHours();
+      if (hour < 12) return 'Morning';
+      if (hour < 15) return 'Lunch';
+      if (hour < 19) return 'Evening';
+      return 'Night';
     }
 
     function render() {
       const tbody = document.getElementById('tbody');
       tbody.innerHTML = '';
 
-      const sections = showAll ? Object.keys(MEDS) : [currentTime];
+      MEDS[currentTime].forEach((med) => {
+        const row = document.createElement('tr');
 
-      sections.forEach((section) => {
-        if (showAll) {
-          const sepRow = document.createElement('tr');
-          const cell = document.createElement('td');
-          cell.colSpan = 3;
-          cell.style.background = '#f9fafb';
-          cell.style.fontWeight = '700';
-          cell.style.paddingTop = '16px';
-          cell.textContent = section;
-          sepRow.appendChild(cell);
-          tbody.appendChild(sepRow);
+        const checkCell = document.createElement('td');
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.addEventListener('change', () => {
+          row.classList.toggle('taken', cb.checked);
+          updateRemaining();
+        });
+        checkCell.appendChild(cb);
+
+        const nameCell = document.createElement('td');
+        nameCell.className = 'pill';
+        nameCell.textContent = med.name;
+
+        const whenCell = document.createElement('td');
+        whenCell.textContent = med.when;
+
+        const times = multiMap.map.get(multiMap.norm(med.name)) || [];
+        if (times.length > 1) {
+          row.classList.add('multi-row');
+          const badge = document.createElement('span');
+          badge.className = 'badge';
+          badge.textContent = 'Multiple: ' + times.join(', ');
+          nameCell.appendChild(badge);
         }
 
-        MEDS[section].forEach((med) => {
-          const row = document.createElement('tr');
-
-          const checkCell = document.createElement('td');
-          const cb = document.createElement('input');
-          cb.type = 'checkbox';
-          cb.addEventListener('change', () => {
-            row.classList.toggle('taken', cb.checked);
-            updateRemaining();
-          });
-          checkCell.appendChild(cb);
-
-          const nameCell = document.createElement('td');
-          nameCell.className = 'pill';
-          nameCell.textContent = med.name;
-
-          const whenCell = document.createElement('td');
-          whenCell.textContent = med.when;
-
-          // Highlight if used multiple times across the day
-          const times = multiMap.map.get(multiMap.norm(med.name)) || [];
-          if (times.length > 1) {
-            row.classList.add('multi-row');
-            const badge = document.createElement('span');
-            badge.className = 'badge';
-            badge.textContent = 'Multiple: ' + times.join(', ');
-            nameCell.appendChild(badge);
-          }
-
-          row.appendChild(checkCell);
-          row.appendChild(nameCell);
-          row.appendChild(whenCell);
-          tbody.appendChild(row);
-        });
+        row.appendChild(checkCell);
+        row.appendChild(nameCell);
+        row.appendChild(whenCell);
+        tbody.appendChild(row);
       });
 
       updateRemaining();
-
-      const currentLabel = showAll ? 'All times' : `${currentTime}`;
-      document.getElementById('currentLabel').textContent = `Showing: ${currentLabel}`;
+      document.getElementById('currentLabel').textContent = `Showing: ${currentTime}`;
     }
 
     function updateRemaining() {
@@ -283,19 +234,10 @@
       document.getElementById('remaining').textContent = `${remaining} item${remaining !== 1 ? 's' : ''}`;
     }
 
-    function resetTicks() {
-      document.querySelectorAll('tbody input[type="checkbox"]').forEach(cb => { cb.checked = false; cb.dispatchEvent(new Event('change')); });
-    }
-
-    // --- Wire up UI ---
     document.querySelectorAll('.time-btn').forEach(btn => btn.addEventListener('click', () => setTime(btn.dataset.time)));
-    document.getElementById('resetBtn').addEventListener('click', resetTicks);
-    document.getElementById('printBtn').addEventListener('click', () => window.print());
-    document.getElementById('expandAllBtn').addEventListener('click', toggleAll);
 
-    // Init
     formatDateLine();
-    setTime('Morning');
+    setTime(getDefaultTime());
   </script>
 </body>
 </html>
