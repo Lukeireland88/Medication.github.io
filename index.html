@@ -174,7 +174,7 @@
 
     const multiMap = (() => {
       const m = new Map();
-      const norm = s => s.replace(/\(.*?\)/g, '').trim().toLowerCase();
+      const norm = s => s.trim().toLowerCase(); // keep full name, just normalize spaces/case
       for (const [time, section] of Object.entries(MEDS)) {
         for (const med of section) {
           const key = norm(med.name);
