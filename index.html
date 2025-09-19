@@ -46,6 +46,7 @@
       --accent-weak: #dbeafe;
       --border: #e5e7eb;
       --multi-bg: #fff7cc;
+      --disabled: #f3f4f6;
     }
 
     html, body { height: 100%; }
@@ -81,6 +82,9 @@
     .pill { font-weight: 600; }
     .multi-row td { background: var(--multi-bg); }
     .badge { font-size: 11px; display: block; margin-top: 4px; padding: 2px 6px; border-radius: 999px; border: 1px solid var(--border); width: fit-content; color: var(--muted); }
+
+    .disabled-row td { color: var(--muted); background: var(--disabled); }
+    .disabled-row input[type="checkbox"] { pointer-events: none; opacity: 0.5; }
 
     /* Notices */
     .notice { margin: 8px 12px 0; background: var(--multi-bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; color: var(--text); }
@@ -183,7 +187,7 @@
     // Map of normalized full med name -> list of times it appears
     const multiMap = (() => {
       const m = new Map();
-      const norm = s => s.trim().toLowerCase(); // keep full name (incl. dosage), normalize case/space only
+      const norm = s => s.trim().toLowerCase();
       for (const [time, section] of Object.entries(MEDS)) {
         for (const med of section) {
           const key = norm(med.name);
@@ -197,12 +201,12 @@
     let currentTime = 'Morning';
 
     // Every-2-day logic for Ferrous Fumarate starting 18 Sept 2025 (local time)
-    const FERROUS_START = new Date(2025, 8, 18); // months are 0-indexed (8 = Sept)
+    const FERROUS_START = new Date(2025, 8, 18);
     function isFerrousToday(date = new Date()) {
       const start = new Date(FERROUS_START.getFullYear(), FERROUS_START.getMonth(), FERROUS_START.getDate());
       const today = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       const diffDays = Math.floor((today - start) / 86400000);
-      return diffDays >= 0 && diffDays % 2 === 0; // show on start day, then every 2 days
+      return diffDays >= 0 && diffDays % 2 === 0;
     }
     function nextFerrousDue(date = new Date()) {
       const start = new Date(FERROUS_START.getFullYear(), FERROUS_START.getMonth(), FERROUS_START.getDate());
@@ -251,10 +255,6 @@
       tbody.innerHTML = '';
 
       MEDS[currentTime].forEach((med) => {
-        // Hide Ferrous Fumarate on off-days
-        if (med.name.toLowerCase().startsWith('ferrous fumarate') && !isFerrousToday()) {
-          return; // skip rendering this row today
-        }
         const row = document.createElement('tr');
 
         const checkCell = document.createElement('td');
@@ -282,6 +282,12 @@
           nameCell.appendChild(badge);
         }
 
+        // Ferrous Fumarate greyed-out on off-days (still shown)
+        if (med.name.toLowerCase().startsWith('ferrous fumarate') && !isFerrousToday()) {
+          row.classList.add('disabled-row');
+          cb.disabled = true;
+        }
+
         row.appendChild(checkCell);
         row.appendChild(nameCell);
         row.appendChild(whenCell);
@@ -290,7 +296,7 @@
 
       updateRemaining();
       document.getElementById('currentLabel').textContent = `Showing: ${currentTime}`;
-      // Update ferrous notice visibility and text (Morning only)
+      // Morning-only off-day notice
       const note = document.getElementById('ferrousNotice');
       if (currentTime === 'Morning' && !isFerrousToday()) {
         const next = nextFerrousDue();
@@ -301,7 +307,7 @@
         note.style.display = 'none';
       }
 
-      // Update Ferrous Fumarate note in summary
+      // Summary line about ferrous due today or not
       const noteEl = document.getElementById('ferrousNote');
       if (noteEl) {
         noteEl.textContent = isFerrousToday() ? "Ferrous Fumarate is due today." : "Ferrous Fumarate is not due today.";
@@ -310,7 +316,7 @@
 
     function updateRemaining() {
       const checkboxes = Array.from(document.querySelectorAll('tbody input[type="checkbox"]'));
-      const remaining = checkboxes.filter(cb => !cb.checked).length;
+      const remaining = checkboxes.filter(cb => !cb.checked && !cb.disabled).length;
       document.getElementById('remaining').textContent = `${remaining} item${remaining !== 1 ? 's' : ''}`;
     }
 
