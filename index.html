@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Medication Tracker</title>
+  <title>Paul Ireland Medication Tracker</title>
 
   <!-- Favicon and app icons -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' ry='20' fill='white'/><rect x='15' y='35' width='70' height='30' rx='15' ry='15' fill='%232563eb'/><line x1='50' y1='35' x2='50' y2='65' stroke='white' stroke-width='6'/></svg>">
@@ -86,8 +86,8 @@
     .disabled-row td { color: var(--muted); background: var(--disabled); }
     .disabled-row input[type="checkbox"] { pointer-events: none; opacity: 0.5; }
 
-    /* Notices */
-    .notice {margin: 8px 12px 0;background: #f5c7c7;border: 1px solid var(--border);border-radius: 10px;padding: 10px 12px;color: var(--text);}
+      /* Notices */
+    .notice {margin: 8px 12px 0;background: #ffcccc;border: 1px solid var(--border);border-radius: 10px;padding: 10px 12px;color: var(--text);}
 
     /* Footer summary */
     .summary { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-top: 1px solid var(--border); color: var(--muted); font-size: clamp(12px, 1.8vw, 14px); }
@@ -120,6 +120,7 @@
       </div>
 
       <div id="ferrousNotice" class="notice" style="display:none"></div>
+      <div id="azithroNotice" class="notice" style="display:none"></div>
 
       <div class="table-wrap">
         <table>
@@ -138,7 +139,8 @@
         <div><strong id="remaining"></strong> left for this time.</div>
         <div>
           Highlighted items show all times they are used (tray: Multiple). Checklist resets on refresh.<br>
-          <span id="ferrousNote" style="color: var(--muted);"></span>
+          <span id="ferrousNote" style="color: var(--muted);"></span><br>
+          <span id="azithroNote" style="color: var(--muted);"></span>
         </div>
       </div>
     </section>
@@ -200,7 +202,7 @@
 
     let currentTime = 'Morning';
 
-    // Every-2-day logic for Ferrous Fumarate starting 18 Sept 2025 (local time)
+    // Ferrous: Every-2-day starting 18 Sept 2025 (local time)
     const FERROUS_START = new Date(2025, 8, 18);
     function isFerrousToday(date = new Date()) {
       const start = new Date(FERROUS_START.getFullYear(), FERROUS_START.getMonth(), FERROUS_START.getDate());
@@ -213,10 +215,24 @@
       const today = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       if (today <= start) return start;
       const diffDays = Math.floor((today - start) / 86400000);
-      const remainder = diffDays % 2; // 0 = due today, 1 = due tomorrow
+      const remainder = diffDays % 2;
       const next = new Date(today);
       next.setDate(today.getDate() + (remainder === 0 ? 0 : 1));
       return next;
+    }
+
+    // Azithromycin: Mon/Wed/Fri
+    function isAzithroToday(date = new Date()) {
+      const day = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getDay(); // 0=Sun..6=Sat
+      return day === 1 || day === 3 || day === 5; // Mon/Wed/Fri
+    }
+    function nextAzithroDue(date = new Date()) {
+      const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      for (let i = 0; i < 7; i++) {
+        if (isAzithroToday(d)) return d;
+        d.setDate(d.getDate() + 1);
+      }
+      return d;
     }
 
     function formatDateLine() {
@@ -282,8 +298,13 @@
           nameCell.appendChild(badge);
         }
 
-        // Ferrous Fumarate greyed-out on off-days (still shown)
+        // Grey out Ferrous on off-days
         if (med.name.toLowerCase().startsWith('ferrous fumarate') && !isFerrousToday()) {
+          row.classList.add('disabled-row');
+          cb.disabled = true;
+        }
+        // Grey out Azithromycin on non Mon/Wed/Fri
+        if (med.name.toLowerCase().startsWith('azithromycin') && !isAzithroToday()) {
           row.classList.add('disabled-row');
           cb.disabled = true;
         }
@@ -296,26 +317,36 @@
 
       updateRemaining();
       document.getElementById('currentLabel').textContent = `Showing: ${currentTime}`;
-      // Morning-only off-day notice
-      const note = document.getElementById('ferrousNotice');
+
+      // Morning-only notices
+      const ferrousN = document.getElementById('ferrousNotice');
       if (currentTime === 'Morning' && !isFerrousToday()) {
         const next = nextFerrousDue();
         const nextStr = next.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
-        note.textContent = `Ferrous Fumarate not due today (next due: ${nextStr}).`;
-        note.style.display = 'block';
+        ferrousN.textContent = `Ferrous Fumarate not due today (next due: ${nextStr}).`;
+        ferrousN.style.display = 'block';
       } else {
-        note.style.display = 'none';
+        ferrousN.style.display = 'none';
+      }
+      const azithroN = document.getElementById('azithroNotice');
+      if (currentTime === 'Morning' && !isAzithroToday()) {
+        const nextA = nextAzithroDue();
+        const nextAStr = nextA.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+        azithroN.textContent = `Azithromycin not due today (next due: ${nextAStr}).`;
+        azithroN.style.display = 'block';
+      } else {
+        azithroN.style.display = 'none';
       }
 
-      // Summary line about ferrous due today or not
-      const noteEl = document.getElementById('ferrousNote');
-      if (noteEl) {
-        noteEl.textContent = isFerrousToday() ? "Ferrous Fumarate is due today." : "Ferrous Fumarate is not due today.";
-      }
+      // Summary lines
+      const ferrousNote = document.getElementById('ferrousNote');
+      if (ferrousNote) ferrousNote.textContent = isFerrousToday() ? "Ferrous Fumarate is due today." : "Ferrous Fumarate is not due today.";
+      const azithroNote = document.getElementById('azithroNote');
+      if (azithroNote) azithroNote.textContent = isAzithroToday() ? "Azithromycin is due today (Mon/Wed/Fri)." : "Azithromycin is not due today.";
     }
 
     function updateRemaining() {
-      const checkboxes = Array.from(document.querySelectorAll('tbody input[type="checkbox"]'));
+      const checkboxes = Array.from(document.querySelectorAll('tbody input[type=\"checkbox\"]'));
       const remaining = checkboxes.filter(cb => !cb.checked && !cb.disabled).length;
       document.getElementById('remaining').textContent = `${remaining} item${remaining !== 1 ? 's' : ''}`;
     }
@@ -356,6 +387,21 @@
         console.assert(t500.length === 1 && t500[0] === 'Lunch', '500 mg should appear only at Lunch');
         console.assert(t1000.length === 2 && t1000.includes('Morning') && t1000.includes('Night'), '1000 mg should appear Morning & Night');
         logOK('Multiple/duplicate highlighting checks passed');
+
+        // Azithromycin weekday schedule tests (Mon/Wed/Fri)
+        const mon = new Date(2025,8,15); // Mon
+        const tue = new Date(2025,8,16); // Tue
+        const wed = new Date(2025,8,17); // Wed
+        const thu = new Date(2025,8,18); // Thu
+        const fri = new Date(2025,8,19); // Fri
+        console.assert(isAzithroToday(mon) === true, 'Mon should be due for Azithromycin');
+        console.assert(isAzithroToday(tue) === false, 'Tue should NOT be due for Azithromycin');
+        console.assert(isAzithroToday(wed) === true, 'Wed should be due for Azithromycin');
+        console.assert(isAzithroToday(thu) === false, 'Thu should NOT be due for Azithromycin');
+        console.assert(isAzithroToday(fri) === true, 'Fri should be due for Azithromycin');
+        const nextFromTue = nextAzithroDue(tue);
+        console.assert(nextFromTue.toDateString() === wed.toDateString(), 'Next Azithro due from Tue should be Wed');
+        logOK('Azithromycin M/W/F checks passed');
       } catch (e) {
         logErr('Self-tests encountered an error: ' + (e && e.message ? e.message : e));
       }
