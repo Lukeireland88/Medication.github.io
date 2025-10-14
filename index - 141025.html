@@ -149,40 +149,33 @@
   <script>
     const MEDS = {
       Morning: [
-        { name: "Indapamide", when: "Daily" },
+	    { name: "Clopidogrel", when: "Daily" },
+		{ name: "Diltiazem", when: "Daily" },
+		{ name: "Folic acid", when: "Daily" },
         { name: "Isosorbide (Half Tablet)", when: "Daily" },
-        { name: "Lansoprazole", when: "Daily" },
-        { name: "Rivaroxaban", when: "Daily" },
-        { name: "Bumetanide", when: "Daily" },
-        { name: "Carbocisteine", when: "Daily" },
-        { name: "Diltiazem", when: "Daily" },
         { name: "Levetiracetam (1000 mg)", when: "Daily" },
+		{ name: "Levetiracetam (500 mg)", when: "Daily" },
+		{ name: "Paracetamol (x2)", when: "Daily" },
         { name: "Phenoxymethylpenicillin", when: "Daily" },
-        { name: "Salbutamol Nebuliser Liquid", when: "Daily" },
         { name: "Trimbow inhaler (Red)", when: "Daily" },
-        { name: "Ferrous Fumarate", when: "Every 2 days" },
-        { name: "Azithromycin", when: "Monday, Wednesday, Friday" },
       ],
       Lunch: [
-        { name: "Levetiracetam (500 mg)", when: "Daily @ 2PM" },
-        { name: "Bumetanide", when: "Daily" },
-        { name: "Carbocisteine", when: "Daily" },
-        { name: "Salbutamol Nebuliser Liquid", when: "Daily" },
+		{ name: "Paracetamol (x2)", when: "Daily" },
       ],
       Evening: [
-        { name: "Salbutamol Nebuliser Liquid", when: "Daily" },
+        { name: "Paracetamol (x2)", when: "Daily" },
       ],
       Night: [
-        { name: "Folic Acid", when: "Daily" },
-        { name: "Atorvastatin", when: "Daily" },
-        { name: "Sodium Picosulfate", when: "Daily" },
-        { name: "Clopidogrel", when: "Daily" },
-        { name: "Carbocisteine", when: "Daily" },
+        
         { name: "Diltiazem", when: "Daily" },
         { name: "Levetiracetam (1000 mg)", when: "Daily" },
+		{ name: "Levetiracetam (500 mg)", when: "Daily" },
+		{ name: "Paracetamol (x2)", when: "Daily" },
         { name: "Phenoxymethylpenicillin", when: "Daily" },
-        { name: "Salbutamol Nebuliser Liquid", when: "Daily" },
-        { name: "Trimbow inhaler (Red)", when: "Daily" },
+        { name: "Sodium Picosulfate", when: "Daily" },
+		{ name: "Trimbow inhaler (Red)", when: "Daily" },
+		
+		
       ],
     };
 
@@ -202,38 +195,8 @@
 
     let currentTime = 'Morning';
 
-    // Ferrous: Every-2-day starting 18 Sept 2025 (local time)
-    const FERROUS_START = new Date(2025, 8, 18);
-    function isFerrousToday(date = new Date()) {
-      const start = new Date(FERROUS_START.getFullYear(), FERROUS_START.getMonth(), FERROUS_START.getDate());
-      const today = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      const diffDays = Math.floor((today - start) / 86400000);
-      return diffDays >= 0 && diffDays % 2 === 0;
-    }
-    function nextFerrousDue(date = new Date()) {
-      const start = new Date(FERROUS_START.getFullYear(), FERROUS_START.getMonth(), FERROUS_START.getDate());
-      const today = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      if (today <= start) return start;
-      const diffDays = Math.floor((today - start) / 86400000);
-      const remainder = diffDays % 2;
-      const next = new Date(today);
-      next.setDate(today.getDate() + (remainder === 0 ? 0 : 1));
-      return next;
-    }
+   
 
-    // Azithromycin: Mon/Wed/Fri
-    function isAzithroToday(date = new Date()) {
-      const day = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getDay(); // 0=Sun..6=Sat
-      return day === 1 || day === 3 || day === 5; // Mon/Wed/Fri
-    }
-    function nextAzithroDue(date = new Date()) {
-      const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      for (let i = 0; i < 7; i++) {
-        if (isAzithroToday(d)) return d;
-        d.setDate(d.getDate() + 1);
-      }
-      return d;
-    }
 
     function formatDateLine() {
       const d = new Date();
