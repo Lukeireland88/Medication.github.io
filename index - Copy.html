@@ -7,7 +7,7 @@
 
   <!-- Favicon and app icons -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' ry='20' fill='white'/><rect x='15' y='35' width='70' height='30' rx='15' ry='15' fill='%232563eb'/><line x1='50' y1='35' x2='50' y2='65' stroke='white' stroke-width='6'/></svg>">
-  <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABMklEQVRYR+2X0Q2DMBBFz1AUwAtwAFzABdwAF3ABuVgE7YgUSoiqK8E0Q0/7b2QykZlQ+f8b3ZmcwnNAhAAZgAYeMKvXwMg6yBa2IESEATrhrfABTAt9W79GMtDap4Az6D6OwPfw4kMcFkcLeBpcAyD/yQYyIGJs9jCEvTdHcm0BLeIJQFgBo7GqFtvG/IOU1SBcRkHZZJ2gDbC6gBwqFmGfRS+UUHi7pr8gTKioeMt1Dh6cfaxlZPCQbMrbMpI3AdkWRY0dQy5ak1U5tVEnZcXbZyjqTsEoFsU93tkP4+VcsAZ+0JY0aqj7yKwAWZTvNfYC4tQTpZz/vEKdM6NugQO6sPhNPXOrvVJ0r2oWg+TjyeB4cRtF2we8AAAAASUVORK5CYII=" />
+  <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABMklEQVRYR+2X0Q2DMBBFz1AUwAtwAFzABdwAF3ABuVgE7YgUSoiqK8E0Q0/7b2QykZlQ+f8b3ZmcwnNAhAAZgAYeMKvXwMg6yBa2IESEATrhrfABTAt9W79GMtDap4Az6D6OwPfw4kMcFkcLeBpcAyD/yQYyIGJs9jCEvTdHcm0BLeIJQFgBo7GqFtvG/IOU1SBcRkHZZJ2gDbC6gBwqFmGfRS+UUHi7pr8gTKioeMt1Dh6cfaxlZPCQbMrbMpI3AdkWRY0dQy5ak1U5tVEnZcXbZyjqTsEoFsU93tkP4+VcsAZ+0JY0aqj7yKwAWZTvNfYC4tQTpZz/vEKdM6NugQO7sPhNPXOrvVJ0r2oWg+TjyeB4cRtF2we8AAAAASUVORK5CYII=" />
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#2563eb">
@@ -63,12 +63,6 @@
 
     .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 6px 18px rgba(0,0,0,0.06); }
 
-    /* Date navigation */
-    .date-nav { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-    .date-btn { appearance:none; border:1px solid var(--border); background:var(--card); color:var(--text); padding:8px 10px; border-radius:10px; font-weight:600; cursor:pointer; }
-    .date-btn:active { transform: translateY(1px); }
-    .date-input { appearance:none; border:1px solid var(--border); background:var(--card); padding:8px 10px; border-radius:10px; font-weight:600; color:var(--text); }
-
     /* Collapsible time picker */
     .time-toggle { padding: 12px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: 600; }
     .time-options { display: none; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 12px; border-bottom: 1px solid var(--border); }
@@ -92,8 +86,8 @@
     .disabled-row td { color: var(--muted); background: var(--disabled); }
     .disabled-row input[type="checkbox"] { pointer-events: none; opacity: 0.5; }
 
-    /* Notices */
-    .notice {margin: 8px 12px 0;background: #ffcccc;border: 1px solid var(--border);border-radius: 10px;padding: 10px 12px;color: var(--text);} 
+      /* Notices */
+    .notice {margin: 8px 12px 0;background: #ffcccc;border: 1px solid var(--border);border-radius: 10px;padding: 10px 12px;color: var(--text);}
 
     /* Footer summary */
     .summary { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-top: 1px solid var(--border); color: var(--muted); font-size: clamp(12px, 1.8vw, 14px); }
@@ -103,7 +97,6 @@
     @media (max-width: 480px) {
       .time-options { grid-template-columns: 1fr; }
       input[type="checkbox"] { width: 28px; height: 28px; }
-      .date-nav { gap:6px; }
     }
   </style>
 </head>
@@ -111,12 +104,6 @@
   <div class="container">
     <header>
       <h1>Medication Tracker</h1>
-      <div class="date-nav" aria-label="Select date">
-        <button id="prevDay" class="date-btn" title="Previous day" aria-label="Previous day">◀</button>
-        <input id="datePicker" class="date-input" type="date" />
-        <button id="nextDay" class="date-btn" title="Next day" aria-label="Next day">▶</button>
-        <button id="todayBtn" class="date-btn" title="Jump to today">Today</button>
-      </div>
       <div id="dateLine" class="sub"></div>
     </header>
 
@@ -163,19 +150,19 @@
     const MEDS = {
       Morning: [
         { name: "Isosorbide (Half Tablet)", when: "Daily" },
-        { name: "Clopidogrel", when: "Daily" },
-        { name: "Folic Acid", when: "Daily" },
-        { name: "Indapamide", when: "Daily" },
-        { name: "Lansoprazole", when: "Daily" },
-        { name: "Levetiracetam (1000 mg)", when: "Daily" },
-        { name: "Rivaroxaban", when: "Daily" },
-        { name: "Trimbow inhaler (Red)", when: "Daily" },
-        { name: "Diltiazem", when: "Daily" },
-        { name: "Phenoxymethylpenicillin", when: "Daily" },
-        { name: "Carbocisteine", when: "Daily" },
-        { name: "Bumetanide", when: "Daily" },
-        { name: "Ferrous Fumarate", when: "Every 2 days" },
-        { name: "Azithromycin", when: "Monday, Wednesday, Friday" },
+		{ name: "Clopidogrel", when: "Daily" },
+		{ name: "Folic Acid", when: "Daily" },
+		{ name: "Indapamide", when: "Daily" },
+		{ name: "Lansoprazole", when: "Daily" },
+		{ name: "Levetiracetam (1000 mg)", when: "Daily" },
+		{ name: "Rivaroxaban", when: "Daily" },
+		{ name: "Trimbow inhaler (Red)", when: "Daily" },
+		{ name: "Diltiazem", when: "Daily" },
+		{ name: "Phenoxymethylpenicillin", when: "Daily" },
+		{ name: "Carbocisteine", when: "Daily" },
+		{ name: "Bumetanide", when: "Daily" },
+		{ name: "Ferrous Fumarate", when: "Every 2 days" },
+		{ name: "Azithromycin", when: "Monday, Wednesday, Friday" },
       ],
       Lunch: [
         { name: "Levetiracetam (500 mg)", when: "Daily @ 2PM" },
@@ -211,36 +198,17 @@
 
     let currentTime = 'Morning';
 
-    // Selected date state (defaults to today at local midnight)
-    let selectedDate = toLocalDateOnly(new Date());
-
-    function toLocalDateOnly(d){
-      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    }
-
-    // Helpers to avoid iOS/Safari timezone quirks with <input type="date">
-    function toDateInputValue(date){
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const d = String(date.getDate()).padStart(2, '0');
-      return `${y}-${m}-${d}`;
-    }
-    function fromDateInputValue(value){
-      const [y, m, d] = value.split('-').map(Number);
-      return new Date(y, (m || 1) - 1, d || 1);
-    }
-
     // Ferrous: Every-2-day starting 18 Sept 2025 (local time)
     const FERROUS_START = new Date(2025, 8, 18);
-    function isFerrousToday(date = selectedDate) {
+    function isFerrousToday(date = new Date()) {
       const start = new Date(FERROUS_START.getFullYear(), FERROUS_START.getMonth(), FERROUS_START.getDate());
-      const today = toLocalDateOnly(date);
+      const today = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       const diffDays = Math.floor((today - start) / 86400000);
       return diffDays >= 0 && diffDays % 2 === 0;
     }
-    function nextFerrousDue(date = selectedDate) {
+    function nextFerrousDue(date = new Date()) {
       const start = new Date(FERROUS_START.getFullYear(), FERROUS_START.getMonth(), FERROUS_START.getDate());
-      const today = toLocalDateOnly(date);
+      const today = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       if (today <= start) return start;
       const diffDays = Math.floor((today - start) / 86400000);
       const remainder = diffDays % 2;
@@ -250,12 +218,12 @@
     }
 
     // Azithromycin: Mon/Wed/Fri
-    function isAzithroToday(date = selectedDate) {
-      const day = toLocalDateOnly(date).getDay(); // 0=Sun..6=Sat
+    function isAzithroToday(date = new Date()) {
+      const day = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getDay(); // 0=Sun..6=Sat
       return day === 1 || day === 3 || day === 5; // Mon/Wed/Fri
     }
-    function nextAzithroDue(date = selectedDate) {
-      const d = toLocalDateOnly(date);
+    function nextAzithroDue(date = new Date()) {
+      const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       for (let i = 0; i < 7; i++) {
         if (isAzithroToday(d)) return d;
         d.setDate(d.getDate() + 1);
@@ -263,15 +231,11 @@
       return d;
     }
 
-    function formatDateLine(date = selectedDate) {
-      const weekday = date.toLocaleDateString(undefined, { weekday: 'long' });
-      const ds = date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
-      document.getElementById('dateLine').textContent = `${weekday} · ${ds}`;
-      // keep the input in sync (use string to avoid timezone bugs)
-      const input = document.getElementById('datePicker');
-      if (input) {
-        input.value = toDateInputValue(toLocalDateOnly(date));
-      }
+    function formatDateLine() {
+      const d = new Date();
+      const weekday = d.toLocaleDateString(undefined, { weekday: 'long' });
+      const date = d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+      document.getElementById('dateLine').textContent = `${weekday} · ${date}`;
     }
 
     function toggleOptions() {
@@ -330,13 +294,13 @@
           nameCell.appendChild(badge);
         }
 
-        // Grey out Ferrous on off-days (for selected date)
-        if (med.name.toLowerCase().startsWith('ferrous fumarate') && !isFerrousToday(selectedDate)) {
+        // Grey out Ferrous on off-days
+        if (med.name.toLowerCase().startsWith('ferrous fumarate') && !isFerrousToday()) {
           row.classList.add('disabled-row');
           cb.disabled = true;
         }
-        // Grey out Azithromycin on non Mon/Wed/Fri (for selected date)
-        if (med.name.toLowerCase().startsWith('azithromycin') && !isAzithroToday(selectedDate)) {
+        // Grey out Azithromycin on non Mon/Wed/Fri
+        if (med.name.toLowerCase().startsWith('azithromycin') && !isAzithroToday()) {
           row.classList.add('disabled-row');
           cb.disabled = true;
         }
@@ -350,21 +314,21 @@
       updateRemaining();
       document.getElementById('currentLabel').textContent = `Showing: ${currentTime}`;
 
-      // Morning-only notices depend on selected date
+      // Morning-only notices
       const ferrousN = document.getElementById('ferrousNotice');
-      if (currentTime === 'Morning' && !isFerrousToday(selectedDate)) {
-        const next = nextFerrousDue(selectedDate);
+      if (currentTime === 'Morning' && !isFerrousToday()) {
+        const next = nextFerrousDue();
         const nextStr = next.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
-        ferrousN.textContent = `Ferrous Fumarate not due on this date (next due: ${nextStr}).`;
+        ferrousN.textContent = `Ferrous Fumarate not due today (next due: ${nextStr}).`;
         ferrousN.style.display = 'block';
       } else {
         ferrousN.style.display = 'none';
       }
       const azithroN = document.getElementById('azithroNotice');
-      if (currentTime === 'Morning' && !isAzithroToday(selectedDate)) {
-        const nextA = nextAzithroDue(selectedDate);
+      if (currentTime === 'Morning' && !isAzithroToday()) {
+        const nextA = nextAzithroDue();
         const nextAStr = nextA.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
-        azithroN.textContent = `Azithromycin not due on this date (next due: ${nextAStr}).`;
+        azithroN.textContent = `Azithromycin not due today (next due: ${nextAStr}).`;
         azithroN.style.display = 'block';
       } else {
         azithroN.style.display = 'none';
@@ -372,56 +336,22 @@
 
       // Summary lines
       const ferrousNote = document.getElementById('ferrousNote');
-      if (ferrousNote) ferrousNote.textContent = isFerrousToday(selectedDate) ? "Ferrous Fumarate is due on the selected date." : "Ferrous Fumarate is not due on the selected date.";
+      if (ferrousNote) ferrousNote.textContent = isFerrousToday() ? "Ferrous Fumarate is due today." : "Ferrous Fumarate is not due today.";
       const azithroNote = document.getElementById('azithroNote');
-      if (azithroNote) azithroNote.textContent = isAzithroToday(selectedDate) ? "Azithromycin is due on the selected date (Mon/Wed/Fri)." : "Azithromycin is not due on the selected date.";
-
-      // Header date line
-      formatDateLine(selectedDate);
+      if (azithroNote) azithroNote.textContent = isAzithroToday() ? "Azithromycin is due today (Mon/Wed/Fri)." : "Azithromycin is not due today.";
     }
 
     function updateRemaining() {
-      const checkboxes = Array.from(document.querySelectorAll('tbody input[type="checkbox"]'));
+      const checkboxes = Array.from(document.querySelectorAll('tbody input[type=\"checkbox\"]'));
       const remaining = checkboxes.filter(cb => !cb.checked && !cb.disabled).length;
       document.getElementById('remaining').textContent = `${remaining} item${remaining !== 1 ? 's' : ''}`;
     }
 
-    function changeDay(delta){
-      const d = new Date(selectedDate);
-      d.setDate(d.getDate() + delta);
-      selectedDate = toLocalDateOnly(d);
-      render();
-    }
-
-    function setDateFromInput(ev){
-      const input = ev.currentTarget;
-      if (input && input.value) {
-        selectedDate = toLocalDateOnly(fromDateInputValue(input.value));
-        render();
-      }
-    }
-
-    // Wire up time buttons
-    document.addEventListener('click', (e) => {
-      const btn = e.target.closest('.time-btn');
-      if (btn && btn.dataset.time) setTime(btn.dataset.time);
-    });
-
-    // Wire up date controls after DOM is ready
-    window.addEventListener('DOMContentLoaded', () => {
-      const prev = document.getElementById('prevDay');
-      const next = document.getElementById('nextDay');
-      const todayBtn = document.getElementById('todayBtn');
-      const dateInput = document.getElementById('datePicker');
-
-      prev.addEventListener('click', () => changeDay(-1));
-      next.addEventListener('click', () => changeDay(1));
-      todayBtn.addEventListener('click', () => { selectedDate = toLocalDateOnly(new Date()); render(); });
-      dateInput.addEventListener('change', setDateFromInput);
-    });
+    // Wire up
+    document.querySelectorAll('.time-btn').forEach(btn => btn.addEventListener('click', () => setTime(btn.dataset.time)));
 
     // Init
-    formatDateLine(selectedDate);
+    formatDateLine();
     setTime(getDefaultTime());
 
     // --- Lightweight self-tests (logged to the console) ---
@@ -468,31 +398,6 @@
         const nextFromTue = nextAzithroDue(tue);
         console.assert(nextFromTue.toDateString() === wed.toDateString(), 'Next Azithro due from Tue should be Wed');
         logOK('Azithromycin M/W/F checks passed');
-
-        // --- Added tests ---
-        // formatDateLine should not throw and should sync input
-        try {
-          formatDateLine(new Date(2025, 9, 14));
-          const dp = document.getElementById('datePicker');
-          console.assert(!!dp && typeof dp.value === 'string' && dp.value.length === 10, 'datePicker should have YYYY-MM-DD');
-          logOK('formatDateLine & input sync ok');
-        } catch (e) {
-          logErr('formatDateLine threw unexpectedly: ' + e.message);
-        }
-
-        // Round-trip date helpers
-        const probe = new Date(2025, 2, 30); // 30 Mar 2025
-        const rt = fromDateInputValue(toDateInputValue(probe));
-        console.assert(rt.getFullYear()===probe.getFullYear() && rt.getMonth()===probe.getMonth() && rt.getDate()===probe.getDate(), 'Date helpers round-trip');
-        logOK('Date helpers round-trip ok');
-
-        // changeDay should move selectedDate by delta days
-        const before = new Date(selectedDate);
-        changeDay(1);
-        const after = new Date(selectedDate);
-        console.assert(Math.round((after - before)/86400000) === 1, 'changeDay(+1) moves by one day');
-        changeDay(-1); // revert
-        logOK('changeDay sanity check ok');
       } catch (e) {
         logErr('Self-tests encountered an error: ' + (e && e.message ? e.message : e));
       }
